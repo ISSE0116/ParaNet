@@ -41,7 +41,7 @@ loss_v=[]
 acc_t=[]
 acc_v=[]
 
-######################data augmentation###########################
+#########################data augmentation###########################
 
 image_datasets = datasets.ImageFolder(data_dir,data_transforms['train'])
 
@@ -61,13 +61,13 @@ dataset_sizes = {'train':train_sizes,'val':val_sizes}
 class_names = image_datasets.classes
 device = torch.device("cuda:{}".format(cuda_num) if torch.cuda.is_available() else "cpu")
 
-#########################about training#############################
+##########################about training#############################
+
 print("\n\n\n")
 print("[ABOUT_regression]")
 print("\033[34m###################################################################\033[0m")
 print(f"\033[34mfull: {len(image_datasets)} -> train: {len(train)}, validation: {len(val)}\033[0m")
 print("\033[34m###################################################################\033[0m")
-
 print("\033[34mlr(Initial): {}, batch_size: {}, num_epoch: {}, step_size: {}, weight_decay: {}\033[0m".format(lr, batch_size, num_epochs, step_size, wd))
 print("\033[34m###################################################################\033[0m")
 print("\n\n\n")
@@ -75,7 +75,6 @@ print("\n\n\n")
 #########################data augmentation############################
 
 #can generate image and label at the same time.
-
 def trainAug()
     image_datagen = transform.Compose()
     label_datagen = transform.Compose() 

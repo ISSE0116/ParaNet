@@ -21,18 +21,16 @@ import sys
 
 plt.ion()
 
-#読み取る画像ディレクトリ指定
+#training img dir
 data_dir = '/mnt/data1/kikuchi/kikuchisan/reg'
 
+#####define augment#####
 batch_size = int(sys.argv[1]) 
 num_epochs = int(sys.argv[2])
 lr = float(sys.argv[3])
 cuda_num = sys.argv[4]
 
-#####パラメータ設定#####
-#batch_size = 256 
-#num_epochs = 25  
-#lr = 0.005
+########parameter#######
 step_size = int(num_epochs * 0.9)
 wd = 0.0001 
 ########################
@@ -43,36 +41,14 @@ loss_v=[]
 acc_t=[]
 acc_v=[]
 
-data_transforms = {
-    'train': transforms.Compose([
-        transforms.RandomResizedCrop(224),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
-    ]),
-    'val': transforms.Compose([
-        transforms.Resize(256),
-        transforms.CenterCrop(224),
-        transforms.ToTensor(),
-        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
-    ]),
-}
+######################data augmentation###########################
 
 image_datasets = datasets.ImageFolder(data_dir,data_transforms['train'])
 
-#指定したディレクトリの画像を学習データ、検証データに分割。
+#devide to train data and validation data
 train_size = int(0.8 * len(image_datasets))
 val_size = len(image_datasets) - train_size
 train, val = torch.utils.data.random_split(image_datasets, [train_size, val_size])
-print("\n\n\n")
-print("[ABOUT]")
-print("\033[32m###################################################################\033[0m")
-print(f"\033[32mfull: {len(image_datasets)} -> train: {len(train)}, validation: {len(val)}\033[0m")
-print("\033[32m###################################################################\033[0m")
-
-print("\033[32mlr(Initial): {}, batch_size: {}, num_epoch: {}, step_size: {}, weight_decay: {}\033[0m".format(lr, batch_size, num_epochs, step_size, wd))
-print("\033[32m###################################################################\033[0m")
-print("\n\n\n")
 
 train_loader = torch.utils.data.DataLoader(train, batch_size, shuffle=True)
 val_loader = torch.utils.data.DataLoader(val, batch_size, shuffle=True)
@@ -85,39 +61,58 @@ dataset_sizes = {'train':train_sizes,'val':val_sizes}
 class_names = image_datasets.classes
 device = torch.device("cuda:{}".format(cuda_num) if torch.cuda.is_available() else "cpu")
 
+#########################about training#############################
+print("\n\n\n")
+print("[ABOUT_regression]")
+print("\033[34m###################################################################\033[0m")
+print(f"\033[34mfull: {len(image_datasets)} -> train: {len(train)}, validation: {len(val)}\033[0m")
+print("\033[34m###################################################################\033[0m")
+
+print("\033[34mlr(Initial): {}, batch_size: {}, num_epoch: {}, step_size: {}, weight_decay: {}\033[0m".format(lr, batch_size, num_epochs, step_size, wd))
+print("\033[34m###################################################################\033[0m")
+print("\n\n\n")
+
 #########################data augmentation############################
+
 #can generate image and label at the same time.
 
 def trainAug()
-   image_datagen = transform.Compose()
-   label_datagen = transform.Compose() 
+    image_datagen = transform.Compose()
+    label_datagen = transform.Compose() 
+   
+    data_transforms = {
+        'train': transforms.Compose([
+            transforms.RandomResizedCrop(224),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+        ]),
+        'val': transforms.Compose([
+            transforms.Resize(256),
+            transforms.CenterCrop(224),
+            transforms.ToTensor(),
+            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+        ]),
+    }
 
-######################################################################
+##########################training models##############################
 
 best_acc = 0.0
 dt_now = 0
-
 #Get a batch of Graining data
 inputs, classes = next(iter(train))
-
 #Make a grid from batch
 out = torchvision.utils.make_grid(inputs)
 
-
-##########################training models##############################
 def train_model(model, criterin, optimizer, scheduler, num_epochs):
     since = time.time()
-
     i = 1
-    
     best_models_wts = copy.deepcopy(model.state_dict())
-
     global loss_t, loss_v, acc_t, acc_v, best_acc, dt_now
 
     for epoch in range(num_epochs):
         print('Epoch {}/{}'.format(epoch+1, num_epochs))
         print('-' * 10)
-
         for phase in ['train', 'val']:
             if phase == 'train':
                 scheduler.step()
@@ -131,7 +126,6 @@ def train_model(model, criterin, optimizer, scheduler, num_epochs):
             for inputs, labels in data_loader[phase]:          #dataloaderからdataset呼び出し
                 inputs = inputs.to(device)                     #GPUに転送
                 labels = labels.to(device) 
-                
                 optimizer.zero_grad()
                 
                 with torch.set_grad_enabled(phase == 'train'): #train時のみ勾配の算出をオンにするの意
@@ -147,6 +141,7 @@ def train_model(model, criterin, optimizer, scheduler, num_epochs):
 
                 running_loss += loss.item() * inputs.size(0)   #lossとbatchサイズとの掛け算
                 running_corrects += torch.sum(preds == labels.data)
+            
             if(phase == 'train'):
                 epoch_loss_t = running_loss / dataset_sizes['train']
                 epoch_acc_t = running_corrects.double() / dataset_sizes['train']
@@ -175,29 +170,31 @@ def train_model(model, criterin, optimizer, scheduler, num_epochs):
     
     dt_now = datetime.datetime.now()
     dt_now = str(dt_now.month) + str(dt_now.day) + '-' + str(dt_now.hour) + str(dt_now.minute) 
-
     model_path = 'model_path_' + '{}-{}-{}_'.format(lr, batch_size, num_epochs) + dt_now
     torch.save(best_models_wts, os.path.join('../weight_path/weight_path_resnet18', model_path))
     print()
     print('!!!!!save_{}!!!!!'.format(model_path))
     return model
 
-############################################################################################
-
-#regression
-
-model_ft = models.resnet18(pretrained=True)
-
-num_ftrs = model_ft.fc.in_features                                                     #modelの定義
-model_ft.fc = nn.Linear(num_ftrs, 1)                                                   #回帰処理に変更
-model_ft = model_ft.to(device)                                                         #GPUに送信
-criterion = nn.MSELoss()                                                               #損失関数定義(２乗平均誤差を使用)
-optimizer_ft = optim.SGD(model_ft.parameters(), lr, momentum=0.9, weight_decay=wd)     #最適化手法(SGD)
-exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size, gamma=0.1)             #スケジューラー
-
+###################################define regression model##################################
+#model
+model_reg = models.resnet18(pretrained=True)
+#
+num_ftrs = model_reg.fc.in_features
+#change to regression
+model_reg.fc = nn.Linear(num_ftrs, 1)
+#send model to GPU
+model_reg = model_reg.to(device)        
+#define criterion
+criterion = nn.MSELoss()          
+#define optimizer
+optimizer = optim.SGD(model_ft.parameters(), lr, momentum=0.9, weight_decay=wd)     
+#define schedular
+exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size, gamma=0.1)           
+#instance train_model
 train_model(model_ft, criterion, optimizer_ft, exp_lr_scheduler, num_epochs)
 
-#plot the result graph
+####################################plot the result graph###################################
 fig = plt.figure(figsize = (10,5))
 ax1 = fig.add_subplot(1, 2, 1)
 ax2 = fig.add_subplot(1, 2, 2)
@@ -226,3 +223,4 @@ plt.savefig(os.path.join("../graph/", graph))
 print()
 print("!!!!!end_to_plot_graph!!!!!")
 print()
+##############################################################################################

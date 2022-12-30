@@ -41,7 +41,7 @@ loss_v=[]
 acc_t=[]
 acc_v=[]
 
-#########################data augmentation###########################
+#########################data augmentation(old)###########################
 
 image_datasets = datasets.ImageFolder(data_dir,data_transforms['train'])
 
@@ -72,27 +72,61 @@ print("\033[34mlr(Initial): {}, batch_size: {}, num_epoch: {}, step_size: {}, we
 print("\033[34m###################################################################\033[0m")
 print("\n\n\n")
 
-#########################data augmentation############################
+
+#########################data augmentation(new!!!!!)############################
 
 #can generate image and label at the same time.
 def trainAug()
-    image_datagen = transform.Compose()
-    label_datagen = transform.Compose() 
-   
-    data_transforms = {
-        'train': transforms.Compose([
-            transforms.RandomResizedCrop(224),
-            transforms.RandomHorizontalFlip(),
-            transforms.ToTensor(),
-            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
-        ]),
-        'val': transforms.Compose([
-            transforms.Resize(256),
-            transforms.CenterCrop(224),
-            transforms.ToTensor(),
-            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
-        ]),
-    }
+    transform = {
+        transform.Compose([
+            transforms.RandomAffine(translate = (0, 0.5))
+    ])
+    
+    image_datagen = ImageFolder("path",transform) 
+
+#########################data augmentation(new2!!!!!)############################
+
+class MyTransforms:
+    def __init__(self) -> None:
+        pass
+
+    def __call__(self, x: torch.Tensor) -> torch.Tensor:
+        x = torch.from_numpy(x.astype(np.float32))
+        return x
+
+class MyDataset(Dataset):
+    def __init__(self, root: str, transforms) -> None:
+        super().__init__()
+        sulf.data = Path(root).glob("/.json")
+
+    def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:  #データ取り出し時に呼び出し、indexがlen()で取得した長さだけ繰り返される
+        data = self.data[index]["data"]
+        label = self.data[index]["label"]
+
+        #dataの変形
+        data = self.transforms(data)
+
+        return data, label
+
+    def __len__(self) -> int:   #len()を使用するときに呼び出される関数
+        return len(self.data)
+
+transforms = transforms.Compose([
+    transfors.ToTensor(),
+    MyTransforms()
+])
+
+dataset = MyDataset(
+    # DO: fix to your original
+    root="path to dataset's root",
+    transforms=transforms
+)
+
+dataloader = DataLoader(
+    dataset=dataset,
+    batch_size=64,
+    shuffle=True
+)
 
 ##########################training models##############################
 
@@ -176,9 +210,9 @@ def train_model(model, criterin, optimizer, scheduler, num_epochs):
     return model
 
 ###################################define regression model##################################
-#model
+#define model
 model_reg = models.resnet18(pretrained=True)
-#
+#number of head 
 num_ftrs = model_reg.fc.in_features
 #change to regression
 model_reg.fc = nn.Linear(num_ftrs, 1)

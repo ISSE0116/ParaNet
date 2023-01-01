@@ -86,6 +86,7 @@ def trainAug()
 
 #########################data augmentation(new2!!!!!)############################
 
+'''
 class MyTransforms:
     def __init__(self) -> None:
         pass
@@ -93,11 +94,23 @@ class MyTransforms:
     def __call__(self, x: torch.Tensor) -> torch.Tensor:
         x = torch.from_numpy(x.astype(np.float32))
         return x
+'''
 
 class MyDataset(Dataset):
     def __init__(self, root: str, transforms) -> None:
-        super().__init__()
-        sulf.data = Path(root).glob("/.json")
+        '''super().__init__()'''
+        self.data = Path(root).glob("/.json")
+        self.df = self.create_csv(path)
+        self.data_transform = data_transform
+
+    def create_csv(self, path):
+        image_path = []  #create a list to save image_path
+
+        for file_name in glob(path + '/*.png'):
+            basename = os.path.basename(file_name)
+            image_path.append(basename)
+
+        df = pd.DataFrame(image_path, columns=['path']) 
 
     def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:  #データ取り出し時に呼び出し、indexがlen()で取得した長さだけ繰り返される
         data = self.data[index]["data"]

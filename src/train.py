@@ -61,7 +61,7 @@ dataset_sizes = {'train':train_sizes,'val':val_sizes}
 class_names = image_datasets.classes
 device = torch.device("cuda:{}".format(cuda_num) if torch.cuda.is_available() else "cpu")
 
-##########################about training#############################
+################################about training#############################
 
 print("\n\n\n")
 print("[ABOUT_regression]")
@@ -71,77 +71,19 @@ print("\033[34m#################################################################
 print("\033[34mlr(Initial): {}, batch_size: {}, num_epoch: {}, step_size: {}, weight_decay: {}\033[0m".format(lr, batch_size, num_epochs, step_size, wd))
 print("\033[34m###################################################################\033[0m")
 print("\n\n\n")
+###############################data augmentation############################
 
-
-#########################data augmentation(new!!!!!)############################
-
-#can generate image and label at the same time.
-def trainAug()
-    transform = {
-        transform.Compose([
-            transforms.RandomAffine(translate = (0, 0.5))
+transform = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.RandomAffine(translate=(0, 0.2))
     ])
-    
-    image_datagen = ImageFolder("path", transform) 
 
-#########################data augmentation(new2!!!!!)###########################
+target_transform = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.RandomAffine(translate=(0, 0.2))
+    ])
 
-"""
-class MyTransforms:
-    def __init__(self) -> None:
-        pass
-
-    def __call__(self, x: torch.Tensor) -> torch.Tensor:
-        x = torch.from_numpy(x.astype(np.float32))
-        return x
-"""
-
-class MyDataset(Dataset):
-    def __init__(self, root: str, transforms) -> None:
-        '''super().__init__()'''
-        self.data = Path(root).glob("/.json")
-        self.df = self.create_csv(path)
-        self.data_transform = data_transform
-
-    def create_csv(self, path):
-        image_path = []  #create a list to save image_path
-
-        for file_name in glob(path + '/*.png'):
-            basename = os.path.basename(file_name)
-            image_path.append(basename)
-
-        df = pd.DataFrame(image_path, columns=['path']) 
-
-    def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:  #データ取り出し時に呼び出し、indexがlen()で取得した長さだけ繰り返される
-        data = self.data[index]["data"]
-        label = self.data[index]["label"]
-
-        #dataの変形
-        data = self.transforms(data)
-
-        return data, label
-
-    def __len__(self) -> int:   #len()を使用するときに呼び出される関数
-        return len(self.data)
-
-transforms = transforms.Compose([
-    transfors.ToTensor(),
-    MyTransforms()
-])
-
-dataset = MyDataset(
-    # DO: fix to your original
-    root="path to dataset's root",
-    transforms=transforms
-)
-
-dataloader = DataLoader(
-    dataset=dataset,
-    batch_size=64,
-    shuffle=True
-)
-
-##############################dataset###############################
+######################################dataset###############################
 
 class CustomImageDataset(Dataset):
     def __init__(self, annotations_file, img_dir, transform=None, target_transform=None):  #初期化

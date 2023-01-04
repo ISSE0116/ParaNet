@@ -1,4 +1,5 @@
 import os
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
@@ -6,6 +7,11 @@ import torch
 import torch.nn as nn
 import torchvision
 import random
+
+batch_size = int(sys.argv[1])
+number_of_epoch = int(sys.argv[2])
+lr = float(sys.argv[3])
+cuda_num = sys.argv[4]
 
 class MyDataset(torch.utils.data.Dataset):
 
@@ -30,7 +36,7 @@ class MyDataset(torch.utils.data.Dataset):
   
     def __getitem__(self, i):
 
-        def regAug(img):
+        def regAug(img): # data audmentation
             num = random.uniform(-150, 0)
             img_rotate = img.rotate(0, translate=(0, num))
             return img_rotate, num
@@ -57,30 +63,44 @@ transform = torchvision.transforms.Compose([
 ])
 
 
-train_data_dir = '/mnt/data1/kikuchi/kikuchisan/reg/random_rotate_20/train/train_coodinate.tsv'
-valid_data_dir = '/mnt/data1/kikuchi/kikuchisan/reg/random_rotate_20/val/val_coodinate.tsv'
+train_data_dir = '/mnt/data1/kikuchi/kikuchisan/reg/random_rotate/train/train_coodinate.tsv'
+valid_data_dir = '/mnt/data1/kikuchi/kikuchisan/reg/random_rotate/val/val_coodinate.tsv'
 
 trainset = MyDataset(train_data_dir, transform=transform)
-trainloader = torch.utils.data.DataLoader(trainset, batch_size=8, shuffle=False)
+trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True)
 
 validset = MyDataset(valid_data_dir, transform=transform)
-validloader = torch.utils.data.DataLoader(validset, batch_size=8, shuffle=False)
+validloader = torch.utils.data.DataLoader(validset, batch_size=batch_size, shuffle=True)
 
-
+"""
 net = torchvision.models.vgg16(pretrained=True)
 num_ftrs = net.classifier[6].in_features
 net.classifier[6] = nn.Linear(num_ftrs, 1)
 device = torch.device('cuda:2' if torch.cuda.is_available() else 'cpu')
 net = net.to(device)
+"""
 
+"""
+net = torchvision.models.resnet18(pretrained=True)
+num_ftrs = net.fc.in_features
+net.fc = nn.Linear(num_ftrs, 1)
+device = torch.device('cuda:2' if torch.cuda.is_available() else 'cpu')
+net = net.to(device)
+"""
 
-optimizer = torch.optim.SGD(net.parameters(), lr=0.001)
+net = torchvision.models.resnext50_32x4d(pretrained=True)
+num_ftrs = net.fc.in_features
+net.fc = nn.Linear(num_ftrs, 1)
+device = torch.device("cuda:{}".format(cuda_num) if torch.cuda.is_available() else 'cpu')
+net = net.to(device)
+
+optimizer = torch.optim.SGD(net.parameters(), lr=lr)
 criterion = torch.nn.MSELoss()
 
 train_loss = []
 valid_loss = []
 
-for epoch in range(10):
+for epoch in range(number_of_epoch):
     # train 
     net.train()
     running_train_loss = 0.0
@@ -114,18 +134,19 @@ for epoch in range(10):
 
     valid_loss.append(running_valid_loss / len(validset))
 
-    print('#epoch:{}\ttrain loss: {}\tvalid loss: {}'.format(epoch, running_train_loss / len(train_loss), running_valid_loss / len(valid_loss)))
+    print('#epoch:{}\ttrain loss: {:.2f}\tvalid loss: {:.2f}'.format(epoch, running_train_loss / len(train_loss), running_valid_loss / len(valid_loss)))
 
 fig = plt.figure()
 ax = fig.add_subplot()
 ax.plot(train_loss, label='train')
 ax.plot(valid_loss, label='valid')
+ax.legend()
 graph = "graph.png"
 plt.savefig(os.path.join("../graph", graph))
 
-fig = plt.figure()
-ax = fig.add_subplot()
-ax.scatter(outputs.cpu().detach().numpy(), labels.cpu().detach().numpy())
+fig1 = plt.figure()
+ax1 = fig1.add_subplot()
+ax1.scatter(outputs.cpu().detach().numpy(), labels.cpu().detach().numpy())
 fig.show()
 data = "data.png"
 plt.savefig(os.path.join("../graph", data))

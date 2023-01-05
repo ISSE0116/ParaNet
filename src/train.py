@@ -87,7 +87,7 @@ net.classifier[6] = nn.Linear(num_ftrs, 1)
 device = torch.device('cuda:2' if torch.cuda.is_available() else 'cpu')
 net = net.to(device)
 """
-#resnet18
+# resnet18
 """
 net = torchvision.models.resnet18(pretrained=True)
 num_ftrs = net.fc.in_features
@@ -95,7 +95,7 @@ net.fc = nn.Linear(num_ftrs, 1)
 device = torch.device('cuda:2' if torch.cuda.is_available() else 'cpu')
 net = net.to(device)
 """
-#resnext50_32x4d
+# resnext50_32x4d
 net = torchvision.models.resnext50_32x4d(pretrained=True)
 num_ftrs = net.fc.in_features
 net.fc = nn.Linear(num_ftrs, 1)
@@ -104,13 +104,13 @@ net = net.to(device)
 
 ############################loss and optimizer#############################
 
-optimizer = torch.optim.Adam(net.parameters(), lr=lr)
+optimizer = torch.optim.SGD(net.parameters(), lr=lr)
 criterion = torch.nn.MSELoss()
+
+################################train and val##############################
 
 train_loss = []
 valid_loss = []
-
-################################train and val##############################
 
 for epoch in range(number_of_epoch):
     # train 
@@ -155,6 +155,9 @@ saved_model = copy.deepcopy(model.state_dict())
 
 model_path = 'model_path_' + '{}-{}-{}_'.format(lr, batch_size, number_of_epoch) + dt_now
 torch.save(saved_model, os.path.join('../weight_regression_path/', model_path))
+
+print()
+print("!!!!!save_{}!!!!!".format(model_path)
 
 #################################### plot result graph ###################################
 

@@ -7,11 +7,16 @@ import torch
 import torch.nn as nn
 import torchvision
 import random
+import datetime
+
+#################################hyper parameter#################################
 
 batch_size = int(sys.argv[1])
 number_of_epoch = int(sys.argv[2])
 lr = float(sys.argv[3])
 cuda_num = sys.argv[4]
+
+###############################Dataset and Dataloader############################
 
 class MyDataset(torch.utils.data.Dataset):
 
@@ -72,6 +77,9 @@ trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuff
 validset = MyDataset(valid_data_dir, transform=transform)
 validloader = torch.utils.data.DataLoader(validset, batch_size=batch_size, shuffle=True)
 
+###############################choose networks###########################
+
+# vgg16
 """
 net = torchvision.models.vgg16(pretrained=True)
 num_ftrs = net.classifier[6].in_features
@@ -79,7 +87,7 @@ net.classifier[6] = nn.Linear(num_ftrs, 1)
 device = torch.device('cuda:2' if torch.cuda.is_available() else 'cpu')
 net = net.to(device)
 """
-
+#resnet18
 """
 net = torchvision.models.resnet18(pretrained=True)
 num_ftrs = net.fc.in_features
@@ -87,18 +95,22 @@ net.fc = nn.Linear(num_ftrs, 1)
 device = torch.device('cuda:2' if torch.cuda.is_available() else 'cpu')
 net = net.to(device)
 """
-
+#resnext50_32x4d
 net = torchvision.models.resnext50_32x4d(pretrained=True)
 num_ftrs = net.fc.in_features
 net.fc = nn.Linear(num_ftrs, 1)
 device = torch.device("cuda:{}".format(cuda_num) if torch.cuda.is_available() else 'cpu')
 net = net.to(device)
 
-optimizer = torch.optim.SGD(net.parameters(), lr=lr)
+############################loss and optimizer#############################
+
+optimizer = torch.optim.Adam(net.parameters(), lr=lr)
 criterion = torch.nn.MSELoss()
 
 train_loss = []
 valid_loss = []
+
+################################train and val##############################
 
 for epoch in range(number_of_epoch):
     # train 
@@ -136,17 +148,38 @@ for epoch in range(number_of_epoch):
 
     print('#epoch:{}\ttrain loss: {:.2f}\tvalid loss: {:.2f}'.format(epoch, running_train_loss / len(train_loss), running_valid_loss / len(valid_loss)))
 
-fig = plt.figure()
-ax = fig.add_subplot()
-ax.plot(train_loss, label='train')
-ax.plot(valid_loss, label='valid')
-ax.legend()
-graph = "graph.png"
+dt_now = datetime.datetime.now()
+dt_now = str(dt_now.month) + str(dt_now.day) + '-' + str(dt_now.hour) + str(dt_now.minute)
+
+saved_model = copy.deepcopy(model.state_dict())
+
+model_path = 'model_path_' + '{}-{}-{}_'.format(lr, batch_size, number_of_epoch) + dt_now
+torch.save(saved_model, os.path.join('../weight_regression_path/', model_path))
+
+#################################### plot result graph ###################################
+
+
+fig = plt.figure(figsize = (15,5))
+ax1 = fig.add_subplot(1, 3, 1)
+ax2 = fig.add_subplot(1, 3, 2)
+ax3 = fig.add_subplot(1, 3, 3)
+
+ax1.plot(train_loss, label='train')
+ax2.plot(valid_loss, label='valid', color="darkorange")
+ax3.scatter(outputs.cpu().detach().numpy(), labels.cpu().detach().numpy(), color="green")
+ax1.legend()
+ax2.legend()
+ax1.set_ylim(0, 600000)
+ax2.set_ylim(0, 600000)
+ax1.set_xlabel("Epochs")
+ax1.set_ylabel("Loss")
+ax2.set_xlabel("Epochs")
+ax2.set_ylabel("Loss")
+ax3.set_xlabel("Outputs")
+ax3.set_ylabel("Labels")
+graph = "train_result_graph_{}-{}-{}_".format(lr, batch_size, number_of_epoch) + dt_now + ".png"
 plt.savefig(os.path.join("../graph", graph))
 
-fig1 = plt.figure()
-ax1 = fig1.add_subplot()
-ax1.scatter(outputs.cpu().detach().numpy(), labels.cpu().detach().numpy())
-fig.show()
-data = "data.png"
-plt.savefig(os.path.join("../graph", data))
+print()
+print("!!!!!end_to_plot_graph!!!!!")
+print()

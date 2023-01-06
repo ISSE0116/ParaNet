@@ -90,7 +90,7 @@ validloader = torch.utils.data.DataLoader(validset, batch_size=batch_size, shuff
 net = torchvision.models.vgg16(pretrained=True)
 num_ftrs = net.classifier[6].in_features
 net.classifier[6] = nn.Linear(num_ftrs, 1)
-device = torch.device('cuda:2' if torch.cuda.is_available() else 'cpu')
+device = torch.device("cuda:{}".format(cuda_num) if torch.cuda.is_available() else 'cpu')
 net = net.to(device)
 """
 # resnet18
@@ -98,7 +98,7 @@ net = net.to(device)
 net = torchvision.models.resnet18(pretrained=True)
 num_ftrs = net.fc.in_features
 net.fc = nn.Linear(num_ftrs, 1)
-device = torch.device('cuda:2' if torch.cuda.is_available() else 'cpu')
+device = torch.device("cuda:{}".format(cuda_num) if torch.cuda.is_available() else 'cpu')
 net = net.to(device)
 """
 # resnext50_32x4d
@@ -113,6 +113,7 @@ if(optim == "SGD"):
     optimizer = torch.optim.SGD(net.parameters(), lr=lr)
 if(optim == "ADAM"):
     optimizer = torch.optim.Adam(net.parameters(), lr=lr)
+
 criterion = torch.nn.MSELoss()
 
 ################################train and val##############################

@@ -13,13 +13,14 @@ import torch.nn as nn
 import torchvision
 import random
 import datetime
-
+import copy
 #################################hyper parameter#################################
 
 batch_size = int(sys.argv[1])
 number_of_epoch = int(sys.argv[2])
 lr = float(sys.argv[3])
-cuda_num = sys.argv[4]
+optim = sys.argv[4]
+cuda_num = sys.argv[5]
 
 ###############################Dataset and Dataloader############################
 
@@ -58,14 +59,14 @@ class MyDataset(torch.utils.data.Dataset):
             
             file_name = os.path.basename(self.x[i]) 
             name = str(i) + file_name 
-            PATH = os.path.join("../graph", name)
+            PATH = os.path.join("../graph/latent_aug_img", name)
             img_rotate.save(PATH)
 
             img = self.transform(img_rotate)
-            self.y[i] = self.y[i] - num
+            label = self.y[i] - num
             
             #print("{}:{}:{},{}".format(i, name, num, self.y[i]))
-        return img, self.y[i]
+        return img, label
 
 transform = torchvision.transforms.Compose([
     torchvision.transforms.ToTensor(),
@@ -108,8 +109,10 @@ device = torch.device("cuda:{}".format(cuda_num) if torch.cuda.is_available() el
 net = net.to(device)
 
 ############################loss and optimizer#############################
-
-optimizer = torch.optim.SGD(net.parameters(), lr=lr)
+if(optim == "SGD"):
+    optimizer = torch.optim.SGD(net.parameters(), lr=lr)
+if(optim == "ADAM"):
+    optimizer = torch.optim.Adam(net.parameters(), lr=lr)
 criterion = torch.nn.MSELoss()
 
 ################################train and val##############################
@@ -156,18 +159,18 @@ for epoch in range(number_of_epoch):
 dt_now = datetime.datetime.now()
 dt_now = str(dt_now.month) + str(dt_now.day) + '-' + str(dt_now.hour) + str(dt_now.minute)
 
-saved_model = copy.deepcopy(model.state_dict())
+saved_model = copy.deepcopy(net.state_dict())
 
-model_path = 'model_path_' + '{}-{}-{}_'.format(lr, batch_size, number_of_epoch) + dt_now
+model_path = 'model_path_' + '{}_{}_{}_{}_'.format(lr, batch_size, number_of_epoch, optim) + dt_now
 torch.save(saved_model, os.path.join('../weight_regression_path/', model_path))
 
 print()
-print("!!!!!save_{}!!!!!".format(model_path)
+print("!!!!!save_{}!!!!!".format(model_path))
 
 #################################### plot result graph ###################################
 
 
-fig = plt.figure(figsize = (15,5))
+fig = plt.figure(figsize = (15, 5))
 ax1 = fig.add_subplot(1, 3, 1)
 ax2 = fig.add_subplot(1, 3, 2)
 ax3 = fig.add_subplot(1, 3, 3)
@@ -177,15 +180,17 @@ ax2.plot(valid_loss, label='valid', color="darkorange")
 ax3.scatter(outputs.cpu().detach().numpy(), labels.cpu().detach().numpy(), color="green")
 ax1.legend()
 ax2.legend()
-ax1.set_ylim(0, 600000)
-ax2.set_ylim(0, 600000)
+ax1.set_ylim(0, 50000)
+ax2.set_ylim(0, 50000)
+ax3.set_xlim(-150, 50)
+ax3.set_ylim(-150, 50)
 ax1.set_xlabel("Epochs")
 ax1.set_ylabel("Loss")
 ax2.set_xlabel("Epochs")
 ax2.set_ylabel("Loss")
 ax3.set_xlabel("Outputs")
 ax3.set_ylabel("Labels")
-graph = "train_result_graph_{}-{}-{}_".format(lr, batch_size, number_of_epoch) + dt_now + ".png"
+graph = "train_result_graph_{}_{}_{}_{}_".format(lr, batch_size, number_of_epoch, optim) + dt_now + ".png"
 plt.savefig(os.path.join("../graph", graph))
 
 print()

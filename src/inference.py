@@ -20,9 +20,10 @@ import sys
 ################################ hyper parameter #################################
 
 inp_model_path = sys.argv[1]
-inp_modellayer = int(sys.argv[2])
+inp_model = str(sys.argv[2])
 img_dir = sys.argv[3]
-weight_dir = '../weight_finetuning_path/weight_finetuning_path_resnet' + str(inp_modellayer)
+
+weight_dir = '../weight_regression_path/' + inp_model
 PATH = os.path.join(weight_dir, inp_model_path) 
 
 ###################################### model #####################################
@@ -52,14 +53,10 @@ if(inp_model == "resnext50_32x4d"):
     model.fc = nn.Linear(num_ftrs, 1)
     model.load_state_dict(torch.load(PATH, map_location = device))
 
-transform = transforms.Compose(
-    [
+transform = transforms.Compose([
         transforms.ToTensor(), 
-        transforms.Normalize(
-            mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]
-        ),
-    ]
-)
+        transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),
+    ])
 
 
 def _get_img_paths(img_dir):
@@ -96,7 +93,7 @@ batch_probs = F.softmax(outputs, dim=1)
 batch_probs, batch_indices = batch_probs.sort(dim=1, descending=True)
 '''
 
-'''
+"""
 def get_classes():
     if not Path("data/imagenet_class_index.json").exists():
         download_url("https://git.io/JebAs", "../data", "imagenet_class_index.json")
@@ -108,30 +105,32 @@ def get_classes():
     return class_names
 
 class_names = get_classes()
-'''
 
-'''
+
+
 for probs, indices in zip(batch_probs, batch_indices):
     for k in range(5):
         print(f"Top-{k + 1} {class_names[indices[k]]} {probs[k]:.2%}")
-'''
+"""
+
 ##################################### inference ##################################
 
 for batch in dataloader:
     inputs = batch["image"].to('cpu')
     outputs = model(inputs)
-    batch_probs = F.softmax(outputs, dim=1)
-    batch_probs, batch_indices = batch_probs.sort(dim=1, descending=True)
+    #batch_probs = F.softmax(outputs, dim=1)
+    #batch_probs, batch_indices = batch_probs.sort(dim=1, descending=True)
     
     for probs, indices, path in zip(batch_probs, batch_indices, batch["path"]):
         #display.display(display.Image(path, width=224))
         print()
         print(f"path: {path}")
+    
         for k in range(5):
             print(f"Top-{k + 1} {probs[k]:.2%} {class_names[indices[k]]}")
             print()
     
-    for probs, indices, path in zip(batch_probs, batch_indices, batch["path"]):	
+    for probs path in zip(batch_probs batch["path"]):	
 	print()
 	print(f"path: {path}")
         print(f"{probs[k]:.2%}")

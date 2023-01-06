@@ -155,7 +155,7 @@ for epoch in range(number_of_epoch):
 
     valid_loss.append(running_valid_loss / len(validset))
 
-    print('#epoch:{}\ttrain loss: {:.2f}\tvalid loss: {:.2f}'.format(epoch, running_train_loss / len(train_loss), running_valid_loss / len(valid_loss)))
+    print('#epoch:{}\ttrain loss: {:.2f}\tvalid loss: {:.2f}'.format(epoch, running_train_loss / len(trainset), running_valid_loss / len(validset)))
 
 dt_now = datetime.datetime.now()
 dt_now = str(dt_now.month) + str(dt_now.day) + '-' + str(dt_now.hour) + str(dt_now.minute)
@@ -176,13 +176,14 @@ ax1 = fig.add_subplot(1, 3, 1)
 ax2 = fig.add_subplot(1, 3, 2)
 ax3 = fig.add_subplot(1, 3, 3)
 
-ax1.plot(train_loss, label='train')
-ax2.plot(valid_loss, label='valid', color="darkorange")
+ax1.plot(range(len(train_loss)), train_loss, label='train')
+ax2.plot(range(len(valid_loss)), valid_loss, label='val', color="darkorange")
 ax3.scatter(outputs.cpu().detach().numpy(), labels.cpu().detach().numpy(), color="green")
+ax3.plot([-150, -150], [50, 50],color="red")
 ax1.legend()
 ax2.legend()
-ax1.set_ylim(0, 50000)
-ax2.set_ylim(0, 50000)
+ax1.set_ylim(0, 1000) 
+ax2.set_ylim(0, 1000)
 ax3.set_xlim(-150, 50)
 ax3.set_ylim(-150, 50)
 ax1.set_xlabel("Epochs")

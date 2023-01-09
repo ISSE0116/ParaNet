@@ -65,7 +65,7 @@ class MyDataset(torch.utils.data.Dataset):
             img = self.transform(img_rotate)
             label = self.y[i] - num
             
-            #print("{}:{}:{},{}".format(i, name, num, self.y[i]))
+            print("{}:{}:{},{}".format(i, name, num, label))
         return img, label
 
 transform = torchvision.transforms.Compose([
@@ -78,10 +78,10 @@ train_data_dir = '/mnt/data1/kikuchi/kikuchisan/reg/random_rotate/train/train_co
 valid_data_dir = '/mnt/data1/kikuchi/kikuchisan/reg/random_rotate/val/val_coodinate.tsv'
 
 trainset = MyDataset(train_data_dir, transform=transform)
-trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True)
+trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=False)
 
 validset = MyDataset(valid_data_dir, transform=transform)
-validloader = torch.utils.data.DataLoader(validset, batch_size=batch_size, shuffle=True)
+validloader = torch.utils.data.DataLoader(validset, batch_size=batch_size, shuffle=False)
 
 ###############################choose networks###########################
 
@@ -102,6 +102,7 @@ device = torch.device("cuda:{}".format(cuda_num) if torch.cuda.is_available() el
 net = net.to(device)
 """
 # resnext50_32x4d
+
 net = torchvision.models.resnext50_32x4d(pretrained=True)
 num_ftrs = net.fc.in_features
 net.fc = nn.Linear(num_ftrs, 1)
@@ -109,6 +110,7 @@ device = torch.device("cuda:{}".format(cuda_num) if torch.cuda.is_available() el
 net = net.to(device)
 
 ############################loss and optimizer#############################
+
 if(optim == "SGD"):
     optimizer = torch.optim.SGD(net.parameters(), lr=lr)
 if(optim == "ADAM"):

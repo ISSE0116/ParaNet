@@ -23,7 +23,7 @@ inp_model_path = sys.argv[1]
 inp_model = str(sys.argv[2])
 img_dir = sys.argv[3]
 
-weight_dir = '../weight_regression_path/' + inp_model
+weight_dir = '../weight_regression_path/' 
 PATH = os.path.join(weight_dir, inp_model_path) 
 
 ###################################### model #####################################
@@ -31,7 +31,7 @@ PATH = os.path.join(weight_dir, inp_model_path)
 def get_device(use_gpu):
     if use_gpu and torch.cuda.is_available():
         torch.backends.cudnn.deterministic = True
-        return torch.device("cuda")
+        return torch.device("cuda:1")
     else:
         return torch.device("cpu")
 
@@ -85,53 +85,16 @@ class ImageFolder(Dataset):
 dataset = ImageFolder(img_dir, transform)
 dataloader = DataLoader(dataset, batch_size=8)
 
-'''
-model.eval()
-outputs = model(inputs)
-
-batch_probs = F.softmax(outputs, dim=1)
-batch_probs, batch_indices = batch_probs.sort(dim=1, descending=True)
-'''
-
-"""
-def get_classes():
-    if not Path("data/imagenet_class_index.json").exists():
-        download_url("https://git.io/JebAs", "../data", "imagenet_class_index.json")
-
-    with open("../data/myclass.json") as f:
-        data = json.load(f)
-        class_names = [x["en"] for x in data]
-
-    return class_names
-
-class_names = get_classes()
-
-
-
-for probs, indices in zip(batch_probs, batch_indices):
-    for k in range(5):
-        print(f"Top-{k + 1} {class_names[indices[k]]} {probs[k]:.2%}")
-"""
-
 ##################################### inference ##################################
+
+model.eval()
 
 for batch in dataloader:
     inputs = batch["image"].to('cpu')
     outputs = model(inputs)
-    #batch_probs = F.softmax(outputs, dim=1)
-    #batch_probs, batch_indices = batch_probs.sort(dim=1, descending=True)
     
-    for probs, indices, path in zip(batch_probs, batch_indices, batch["path"]):
-        #display.display(display.Image(path, width=224))
-        print()
-        print(f"path: {path}")
+    for output, path in zip(outputs, batch["path"]):
+        print("path: {}".format(os.path.basename(path)))
+        print("output: {:.2f}".format(output.item()))
     
-        for k in range(5):
-            print(f"Top-{k + 1} {probs[k]:.2%} {class_names[indices[k]]}")
-            print()
-    
-    for probs path in zip(batch_probs batch["path"]):	
-	print()
-	print(f"path: {path}")
-        print(f"{probs[k]:.2%}")
-        print()
+    print()

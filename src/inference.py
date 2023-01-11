@@ -31,7 +31,7 @@ PATH = os.path.join(weight_dir, inp_model_path)
 def get_device(use_gpu):
     if use_gpu and torch.cuda.is_available():
         torch.backends.cudnn.deterministic = True
-        return torch.device("cuda:1")
+        return torch.device("cuda:2")
     else:
         return torch.device("cpu")
 
@@ -61,7 +61,7 @@ transform = transforms.Compose([
 
 def _get_img_paths(img_dir):
     img_dir = Path(img_dir)
-    img_extensions = [".jpg", ".jpeg", ".png", ".bmp"]
+    img_extensions = [".jpg", ".jpeg", ".png"]
     img_paths = [str(p) for p in img_dir.iterdir() if p.suffix in img_extensions]
     img_paths.sort()
 

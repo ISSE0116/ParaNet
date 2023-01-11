@@ -14,6 +14,7 @@ import torchvision
 import random
 import datetime
 import copy
+
 #################################hyper parameter#################################
 
 batch_size = int(sys.argv[1])
@@ -48,7 +49,7 @@ class MyDataset(torch.utils.data.Dataset):
     def __getitem__(self, i):
 
         def regAug(img): # data audmentation
-            num = random.uniform(-150, 0)
+            num = random.uniform(-150, 150)
             img_rotate = img.rotate(0, translate=(0, num))
             return img_rotate, num
 
@@ -64,8 +65,8 @@ class MyDataset(torch.utils.data.Dataset):
 
             img = self.transform(img_rotate)
             label = self.y[i] - num
-            
-            print("{}:{}:{},{}".format(i, name, num, label))
+        #if you want to show aug image, please use this code.
+            #print("{}:{}:{},{}".format(i, name, num, label))
         return img, label
 
 transform = torchvision.transforms.Compose([
@@ -74,14 +75,14 @@ transform = torchvision.transforms.Compose([
 ])
 
 
-train_data_dir = '/mnt/data1/kikuchi/kikuchisan/reg/random_rotate/train/train_coodinate.tsv'
-valid_data_dir = '/mnt/data1/kikuchi/kikuchisan/reg/random_rotate/val/val_coodinate.tsv'
+train_data_dir = '/mnt/data1/kikuchi/kikuchisan/reg/layoutnet_dataset/train/train.tsv'
+valid_data_dir = '/mnt/data1/kikuchi/kikuchisan/reg/layoutnet_dataset/val/val.tsv'
 
 trainset = MyDataset(train_data_dir, transform=transform)
-trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=False)
+trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True)
 
 validset = MyDataset(valid_data_dir, transform=transform)
-validloader = torch.utils.data.DataLoader(validset, batch_size=batch_size, shuffle=False)
+validloader = torch.utils.data.DataLoader(validset, batch_size=batch_size, shuffle=True)
 
 ###############################choose networks###########################
 
